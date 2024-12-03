@@ -10,149 +10,148 @@ import {
 } from 'react-native-paper';
 import SQLite from 'react-native-sqlite-storage';
 
-// Khởi tạo SQLite database
-const db = SQLite.openDatabase(
+const database = SQLite.openDatabase(
   {
-    name: 'taskDB',
+    name: 'bangTask2',
     location: 'default',
   },
   () => {
-    console.log('Database opened');
+    console.log('Tao bang moi thanh cong');
   },
   error => {
-    console.log('Error: ', error);
+    console.log('Loi: ', error);
   },
 );
 
-// Tạo bảng nếu chưa tồn tại
-const createTable = () => {
-  db.transaction(tx => {
+const taoBang = () => {
+  database.transaction(tx => {
     tx.executeSql(
-      `CREATE TABLE IF NOT EXISTS tasks (
+      `CREATE TABLE IF NOT EXISTS nhiemvu (
         id INTEGER PRIMARY KEY AUTOINCREMENT, 
-        name TEXT, 
-        completed BOOLEAN
+        tenNhiemvu TEXT, 
+        trangthaihoanthien BOOLEAN
       )`,
       [],
-      () => console.log('Table created'),
+      () => console.log('Tao bang thanh cong'),
       (tx, error) => {
-        console.log('Error creating table: ', error.message);
+        console.log('Loi tao bang: ', error.message);
       },
     );
   });
 };
 
-// Chèn task mới
-const insertTask = (name: string) => {
-  db.transaction(tx => {
+const taoNhiemVuMoi = (tenNhiemvu: string) => {
+  database.transaction(tx => {
     tx.executeSql(
-      `INSERT INTO tasks (name, completed) VALUES (?, ?)`,
-      [name, false],
-      () => console.log('Task inserted'),
+      `INSERT INTO nhiemvu (tenNhiemvu, trangthaihoanthien) VALUES (?, ?)`,
+      [tenNhiemvu, false],
+      () => console.log('Tao nhiem vu thanh cong'),
       (tx, error) => {
-        console.log('Error inserting task: ', error.message);
+        console.log('Loi them moi bang: ', error.message);
       },
     );
   });
 };
 
-// Lấy danh sách task
-const getTasks = (setTasks: (tasks: any) => void) => {
-  db.transaction(tx => {
+const layCacNhiemVu = (setcacNhiemVu: (cacNhiemVu: any) => void) => {
+  database.transaction(tx => {
     tx.executeSql(
-      `SELECT * FROM tasks`,
+      `SELECT * FROM nhiemvu`,
       [],
       (_, result) => {
         const rows = result.rows.raw();
-        setTasks(rows);
+        setcacNhiemVu(rows);
       },
       (tx, error) => {
-        console.log('Error fetching tasks: ', error.message);
+        console.log('Loi lay task: ', error.message);
       },
     );
   });
 };
 
-// Cập nhật task
-const updateTask = (id: number, name: string, completed: boolean) => {
-  db.transaction(tx => {
+const capnhatNhiemvu = (
+  id: number,
+  tenNhiemvu: string,
+  trangthaihoanthien: boolean,
+) => {
+  database.transaction(tx => {
     tx.executeSql(
-      `UPDATE tasks SET name = ?, completed = ? WHERE id = ?`,
-      [name, completed, id],
-      () => console.log('Task updated'),
+      `UPDATE nhiemvu SET tenNhiemvu = ?, trangthaihoanthien = ? WHERE id = ?`,
+      [tenNhiemvu, trangthaihoanthien, id],
+      () => console.log('Nhiem vu cap nhat thanh cong'),
       (tx, error) => {
-        console.log('Error updating task: ', error.message);
+        console.log('Loi khi cap nhat nhiem vu: ', error.message);
       },
     );
   });
 };
 
-// Xóa task
-const deleteTask = (id: number) => {
-  db.transaction(tx => {
+const xoaTask = (id: number) => {
+  database.transaction(tx => {
     tx.executeSql(
-      `DELETE FROM tasks WHERE id = ?`,
+      `DELETE FROM nhiemvu WHERE id = ?`,
       [id],
-      () => console.log('Task deleted'),
+      () => console.log('nhiem vu duoc xoa thanh cong'),
       (tx, error) => {
-        console.log('Error deleting task: ', error.message);
+        console.log('loi khi xoa nhiem vu: ', error.message);
       },
     );
   });
 };
 
-// Component chính của ứng dụng
 const App = () => {
-  const [taskName, setTaskName] = useState('');
-  const [tasks, setTasks] = useState<
-    {id: number; name: string; completed: boolean}[]
+  const [tenNhiemVu, settenNhiemVu] = useState('');
+  const [cacNhiemVu, setcacNhiemVu] = useState<
+    {id: number; tenNhiemvu: string; trangthaihoanthien: boolean}[]
   >([]);
-  const [isDialogVisible, setDialogVisible] = useState(false);
-  const [editedName, setEditedName] = useState('');
-  const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
+  const [ishienthiDialog, sethienthiDialog] = useState(false);
+  const [tenChinhsua, settenChinhsua] = useState('');
+  const [idNhiemvuDuocchinhsua, setidNhiemvuDuocchinhsua] = useState<
+    number | null
+  >(null);
 
   useEffect(() => {
-    createTable();
-    loadTasks();
+    taoBang();
+    loadcacNhiemVu();
   }, []);
 
-  const loadTasks = () => {
-    getTasks(setTasks);
+  const loadcacNhiemVu = () => {
+    layCacNhiemVu(setcacNhiemVu);
   };
 
-  const handleAddTask = () => {
-    if (taskName) {
-      insertTask(taskName);
-      setTaskName('');
-      loadTasks();
+  const tenThemMoiNhiemVu = () => {
+    if (tenNhiemVu) {
+      taoNhiemVuMoi(tenNhiemVu);
+      settenNhiemVu('');
+      loadcacNhiemVu();
     }
   };
 
-  const handleToggleComplete = (id: number, completed: boolean) => {
-    const task = tasks.find(task => task.id === id);
+  const handleToggleComplete = (id: number, trangthaihoanthien: boolean) => {
+    const task = cacNhiemVu.find(task => task.id === id);
     if (task) {
-      updateTask(id, task.name, !completed);
-      loadTasks();
+      capnhatNhiemvu(id, task.tenNhiemvu, !trangthaihoanthien);
+      loadcacNhiemVu();
     }
   };
 
-  const handleEditTask = (id: number, name: string) => {
-    setEditingTaskId(id);
-    setEditedName(name);
-    setDialogVisible(true);
+  const handleCapnhatNhiemvu = (id: number, tenNhiemvu: string) => {
+    setidNhiemvuDuocchinhsua(id);
+    settenChinhsua(tenNhiemvu);
+    sethienthiDialog(true);
   };
 
-  const saveEditedTask = () => {
-    if (editingTaskId !== null) {
-      updateTask(editingTaskId, editedName, false);
-      setDialogVisible(false);
-      loadTasks();
+  const luuNhiemvuDuoccapnhat = () => {
+    if (idNhiemvuDuocchinhsua !== null) {
+      capnhatNhiemvu(idNhiemvuDuocchinhsua, tenChinhsua, false);
+      sethienthiDialog(false);
+      loadcacNhiemVu();
     }
   };
 
-  const handleDeleteTask = (id: number) => {
-    deleteTask(id);
-    loadTasks();
+  const handlexoaTask = (id: number) => {
+    xoaTask(id);
+    loadcacNhiemVu();
   };
 
   return (
@@ -160,92 +159,94 @@ const App = () => {
       <View style={styles.container}>
         <TextInput
           label="Task Name"
-          value={taskName}
-          onChangeText={setTaskName}
+          value={tenNhiemVu}
+          onChangeText={settenNhiemVu}
           style={styles.input}
         />
-        <Button mode="contained" onPress={handleAddTask} style={styles.button}>
+        <Button
+          mode="contained"
+          onPress={tenThemMoiNhiemVu}
+          style={styles.button}>
           Add Task
         </Button>
 
-        {/* Tasks cần làm */}
-        <Text style={styles.header}>Tasks cần làm</Text>
+        <Text style={styles.header}>Incoming Tasks</Text>
         <FlatList
-          data={tasks.filter(task => !task.completed)} // Chỉ hiển thị task chưa hoàn thành
+          data={cacNhiemVu.filter(task => !task.trangthaihoanthien)}
           renderItem={({item}) => (
             <List.Item
-              title={<Text>{item.name}</Text>}
+              title={<Text>{item.tenNhiemvu}</Text>}
               right={() => (
                 <>
                   <Button
                     onPress={() =>
-                      handleToggleComplete(item.id, item.completed)
+                      handleToggleComplete(item.id, item.trangthaihoanthien)
                     }>
                     Done
                   </Button>
-                  <Button onPress={() => handleEditTask(item.id, item.name)}>
+                  <Button
+                    onPress={() =>
+                      handleCapnhatNhiemvu(item.id, item.tenNhiemvu)
+                    }>
                     Update
                   </Button>
-                  <Button onPress={() => handleDeleteTask(item.id)}>
-                    Delete
-                  </Button>
+                  <Button onPress={() => handlexoaTask(item.id)}>Delete</Button>
                 </>
               )}
-              onPress={() => handleEditTask(item.id, item.name)}
+              onPress={() => handleCapnhatNhiemvu(item.id, item.tenNhiemvu)}
             />
           )}
           keyExtractor={item => item.id.toString()}
         />
 
-        {/* Tasks đã hoàn thành */}
-        <Text style={styles.header}>Tasks đã hoàn thành</Text>
+        <Text style={styles.header}>Finished Tasks</Text>
         <FlatList
-          data={tasks.filter(task => task.completed)} // Chỉ hiển thị task đã hoàn thành
+          data={cacNhiemVu.filter(task => task.trangthaihoanthien)}
           renderItem={({item}) => (
             <List.Item
               title={
                 <Text style={{textDecorationLine: 'line-through'}}>
-                  {item.name}
+                  {item.tenNhiemvu}
                 </Text>
-              } // Gạch ngang tên task
+              }
               right={() => (
                 <>
                   <Button
                     onPress={() =>
-                      handleToggleComplete(item.id, item.completed)
+                      handleToggleComplete(item.id, item.trangthaihoanthien)
                     }>
                     Have not done
                   </Button>
-                  <Button onPress={() => handleEditTask(item.id, item.name)}>
+                  <Button
+                    onPress={() =>
+                      handleCapnhatNhiemvu(item.id, item.tenNhiemvu)
+                    }>
                     Update
                   </Button>
-                  <Button onPress={() => handleDeleteTask(item.id)}>
-                    Delete
-                  </Button>
+                  <Button onPress={() => handlexoaTask(item.id)}>Delete</Button>
                 </>
               )}
-              onPress={() => handleEditTask(item.id, item.name)}
+              onPress={() => handleCapnhatNhiemvu(item.id, item.tenNhiemvu)}
             />
           )}
           keyExtractor={item => item.id.toString()}
         />
 
-        {/* Dialog chỉnh sửa task */}
         <Portal>
           <Dialog
-            visible={isDialogVisible}
-            onDismiss={() => setDialogVisible(false)}>
+            visible={ishienthiDialog}
+            onDismiss={() => sethienthiDialog(false)}>
             <Dialog.Title>Edit Task</Dialog.Title>
             <Dialog.Content>
               <TextInput
                 label="Task Name"
-                value={editedName}
-                onChangeText={setEditedName}
+                value={tenChinhsua}
+                onChangeText={settenChinhsua}
               />
             </Dialog.Content>
             <Dialog.Actions>
-              <Button onPress={saveEditedTask}>Save</Button>
-              <Button onPress={() => setDialogVisible(false)}>Cancel</Button>
+              <Button onPress={luuNhiemvuDuoccapnhat}>Save</Button>
+              <Button onPress={() => sethienthiDialog(false)}>Cancel</Button>
             </Dialog.Actions>
           </Dialog>
         </Portal>
